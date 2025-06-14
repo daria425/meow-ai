@@ -1,0 +1,4 @@
+.env
+.virtualenv
+__pycache__
+images
