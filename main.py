@@ -2,12 +2,15 @@ from get_image import get_cat_image, get_cartoonized_cat
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
+import base64
 from logger import logger
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client= OpenAI(api_key=OPENAI_API_KEY)
-original_image_url = get_cat_image(save_image=True)
+original_image_url ="https://cdn2.thecatapi.com/images/92D9NZLs0.jpg" # Change to function later
+output_image_path = "images/cartoonized_cat.jpg"
 logger.info(f"Original cat image URL: {original_image_url}")
+# First iteration: Get a random cat image from The Cat API
 generation_chat_history=[
     {
         "role":"developer", 
@@ -54,6 +57,71 @@ generation_prompt=client.responses.create(
 logger.info(f"Generated prompt for cartoon image: {generation_prompt}")
 cartoon_image=get_cartoonized_cat(
     prompt=generation_prompt, 
-    output_image_path="images/cartoonized_cat.jpg"
+    output_image_path=output_image_path
 )
 logger.info(f"Cartoonized cat image saved as 'images/cartoonized_cat.jpg'")
+generation_chat_history.append(
+    {
+        "role":"assistant", 
+        "content": generation_prompt
+    }
+    
+)
+with open(output_image_path, "rb") as image_file:
+    encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+# Evaluation
+reflection_chat_history=[
+    {
+        "role":"developer", 
+        "content": """You are an expert prompt engineer and are talented in evaluating AI-generated images. The user is trying to create a cartoonized image of their cat using the Stability AI API. 
+        The aim for the image to be as close as possible to the original cat photo. 
+        Your task is comprised of 2 parts:
+        PART 1: Evaluate the image based on the following criteria:
+        1. **Similarity to Original Photo**: How closely does the cartoonized image resemble the original cat photo in terms of features, colors, and overall appearance?
+        2. **Cuteness Factor**: Does the cartoonized image capture the essence of cuteness? Are the features exaggerated in a way that enhances the cuteness?
+        3. **Artistic Style**: Does the cartoonized image maintain a consistent and appealing cartoon style? Are the colors vibrant and the lines clean?
+        4. **Overall Impression**: What is your overall impression of the cartoonized image? Does it evoke a positive emotional response?
+        PART 2: Provide critique and suggestions for the user to improve their prompt for generating a better cartoonized image of their cat.
+        Respond in the format of a JSON object with the following structure:
+        {
+            "evaluation": {
+                "similarity_to_original": "Rating from 1 to 10",
+                "cuteness_factor": "Rating from 1 to 10",
+                "artistic_style": "Rating from 1 to 10",
+                "overall_impression": "Rating from 1 to 10"
+            },
+            "critique": "Your critique and suggestions for improving the prompt."
+        }
+        Respond with the JSON object only, do not include any additional text, or markdown formatting.
+        """
+    }, 
+    {
+        "role": "user",
+        "content": [
+            {
+                "type": "input_text",
+                "text": f"This is the original cat photo"
+            },
+            {
+                "type": "input_image",
+                "image_url": original_image_url
+            }, 
+            {
+                "type": "input_text",
+                "text": f"This is the cartoonized cat image generated based on the prompt: {generation_prompt}"
+            },
+            {
+                "type": "input_image",
+                "image_url": f"data:image/jpeg;base64,{encoded_image}"
+            }
+        ]
+    }
+]
+
+evaluation_response = client.responses.create(
+    model="gpt-4o",
+    input=reflection_chat_history,
+    temperature=0
+).output_text
+
+logger.info(f"Evaluation response: {evaluation_response}")
