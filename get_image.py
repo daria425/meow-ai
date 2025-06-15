@@ -1,5 +1,4 @@
 import requests
-import base64
 from dotenv import load_dotenv
 import os
 
@@ -21,7 +20,9 @@ def get_cat_image(save_image:bool=False)-> str:
         image_url = data[0]["url"]
         if save_image:
             image_data = requests.get(image_url).content
-            with open("cat_image.jpg", "wb") as file:
+            if not os.path.exists("images"):
+                os.makedirs("images")
+            with open("images/cat_image.jpg", "wb") as file:
                 file.write(image_data)
             print("Cat image saved as 'cat_image.jpg'")
         else:
@@ -31,7 +32,13 @@ def get_cat_image(save_image:bool=False)-> str:
         print(f"Error: {response.status_code}")
         return None
 
-def get_cartoonized_cat(prompt:str, output_image_path: str):
+def get_cartoonized_cat(prompt:str, output_image_path: str="images/cartoonized_cat.jpg"):
+    """
+    Use the Stability AI API to generate a cartoonized image of a cat based on a prompt.
+    Args:
+        prompt (str): The prompt for generating the cartoonized cat image.
+        output_image_path (str): Path to save the generated image.
+    """
     response = requests.post(
         f"https://api.stability.ai/v2beta/stable-image/generate/core",
         headers={
