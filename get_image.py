@@ -40,7 +40,7 @@ def get_cartoonized_cat(prompt:str, output_image_path: str="images/cartoonized_c
         output_image_path (str): Path to save the generated image.
     """
     response = requests.post(
-        f"https://api.stability.ai/v2beta/stable-image/generate/core",
+        f"https://api.stability.ai/v2beta/stable-image/generate/ultra",
         headers={
             "authorization": f"Bearer {STABILITY_API_KEY}",
             "accept": "image/*"

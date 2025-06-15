@@ -1,6 +1,7 @@
 import re
 import json
 from error_handlers import categorize_error
+from logger import logger
 def process_llm_json(response_content):
     """
     Process the response content from the LLM to extract JSON data.
@@ -24,6 +25,7 @@ def process_llm_json(response_content):
     except json.JSONDecodeError as e:
         # Handle JSON parsing error
         error_message=f"Error parsing JSON: {e}"
+        logger.error(f"Unexpected response format from LLM. Expected JSON format but received:{response_content}")
         error_category=categorize_error(error_message)
         return {
             "error": True,
