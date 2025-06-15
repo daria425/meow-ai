@@ -1,4 +1,5 @@
 from get_image import get_cat_image, get_cartoonized_cat
+from file_utils import load_txt_instuctions
 from response_handlers import process_llm_json
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -9,7 +10,7 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client= OpenAI(api_key=OPENAI_API_KEY)
 original_image_url ="https://cdn2.thecatapi.com/images/92D9NZLs0.jpg" # Change to function later
-
+generation_instruction_file_path="./generation_system_instructions.txt"
 def run_loop(iterations:int=3):
     """
     Run the main loop for a specified number of iterations.
@@ -18,24 +19,8 @@ def run_loop(iterations:int=3):
     generation_chat_history=[
         {
             "role":"developer", 
-            "content":f"""You are an expert prompt writer for the Stability AI API. The user will provide you with a photo of their cat.
-            The user wants an adorable cartoon image as close to their cat photo as possible generated from Stability AI. 
-            Your task is to create a detailed description of the image to generate a cute cartoon cat.
-            image.
-            Please provide a detailed description of the cat's appearance, colors, and any other relevant details that would help in generating a cute cartoon cat image. 
-            Important details to include:
-            - The cat's fur color and pattern (e.g., tabby, calico, solid)
-            - The cat's eye color and shape
-            - The cat's size and build (e.g., small, fluffy, slender)
-            - Any distinctive features (e.g., unique markings, collar, toys)
-            - The overall mood or expression of the cat (e.g., playful, sleepy, curious)
-            - The setting or background (e.g., indoors, outdoors, with toys)
-            - Emphasis on cuteness and cartoonish style
-            - Use descriptive adjectives to enhance the prompt
-            KEY GUIDELINES:
-            Respond in the format of a prompt for the Stability AI API. Do not include any additional text or explanations, just the prompt itself.
-            Do not say 'create an image' or 'generate an image', just provide the description directly."""
-        },
+            "content":load_txt_instuctions(generation_instruction_file_path)
+                },
     ]
     generation_chat_history.append(
         {
@@ -155,8 +140,14 @@ def run_loop(iterations:int=3):
         ).output_text
         logger.info(f"Revised prompt for cartoon image {i+1}: {revised_prompt_response}")
         generation_prompt = revised_prompt_response
+        generation_chat_history.append(
+            {
+                "role":"assistant", 
+                "content": revised_prompt_response
+            }
+        )
     logger.info("All iterations completed. Chat history:")
-    logger.ingo(generation_chat_history)
+    logger.info(generation_chat_history)
 
 if __name__ == "__main__":
     logger.info("Starting the cartoonized cat image generation process.")
