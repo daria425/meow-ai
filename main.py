@@ -1,4 +1,5 @@
 from get_image import get_cat_image, get_cartoonized_cat
+from response_handlers import process_llm_json
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
@@ -9,6 +10,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client= OpenAI(api_key=OPENAI_API_KEY)
 original_image_url ="https://cdn2.thecatapi.com/images/92D9NZLs0.jpg" # Change to function later
 output_image_path = "images/cartoonized_cat.jpg"
+revision_image_path = "images/revised_cartoonized_cat.jpg"
 logger.info(f"Original cat image URL: {original_image_url}")
 # First iteration: Get a random cat image from The Cat API
 generation_chat_history=[
@@ -124,4 +126,26 @@ evaluation_response = client.responses.create(
     temperature=0
 ).output_text
 
+evaluation_response = process_llm_json(evaluation_response)
 logger.info(f"Evaluation response: {evaluation_response}")
+generation_chat_history.append(
+    {
+        "role":"user", 
+        "content":f"""My feedback on the image generated from your description: 
+        {evaluation_response["critique"]}
+        Please provide a revised description based on this feedback to improve the cartoonized image of my cat."""
+    }
+)
+revised_prompt_response = client.responses.create(
+    model="gpt-4o",
+    input=generation_chat_history,
+    temperature=0.5
+).output_text
+logger.info(f"Revised prompt for cartoon image: {revised_prompt_response}")
+
+cartoon_image=get_cartoonized_cat(
+    prompt=revised_prompt_response, 
+    output_image_path=revision_image_path
+)
+logger.info(f"Revised cartoonized cat image saved as 'images/revised_cartoonized_cat.jpg'")
+
