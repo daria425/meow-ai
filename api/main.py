@@ -2,14 +2,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-origins=["http://localhost:3000", "http://localhost:3001", "https://social-style-scan.vercel.app"]
+
 from app.services.cat_cartoonizer import CatCartoonizerAgent
 from app.config.settings import app_settings
 from app.models.generation_run import GenerationRun
 
 app=FastAPI()
 
-
+origins=["http://localhost:3000", "http://localhost:5173", "https://some-public-frontend.vercel.app"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

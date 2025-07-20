@@ -1,15 +1,15 @@
 import catCartoonizerServiceInstance from "../services/catCartonizerService";
 import { useQuery } from "@tanstack/react-query";
-import type { GenerationRun } from "../types/catGeneration";
 
-function CatCartoonizer() {
-  const { data, loading, error } = useQuery({
+export function CatCartoonizer() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["cartoonizedCat"],
     queryFn: async () => {
       const response = await catCartoonizerServiceInstance.getCartoonizedCat();
       return response;
     },
   });
-  if (loading) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
   if (error) {
