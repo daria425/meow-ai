@@ -10,7 +10,7 @@ type EvaluationData = {
   critique: string;
 };
 
-type RunData = {
+export type RunData = {
   iteration_num: number;
   prompt: string;
   cartoonized_image: string;
