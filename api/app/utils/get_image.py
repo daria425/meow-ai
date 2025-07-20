@@ -1,9 +1,7 @@
 import requests
-from dotenv import load_dotenv
+from app.config.settings import app_settings
 import os
 
-load_dotenv()
-STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
 
 
 def get_cat_image(save_image:bool=False)-> str:
@@ -42,7 +40,7 @@ def get_cartoonized_cat(prompt:str, output_image_path: str="images/cartoonized_c
     response = requests.post(
         f"https://api.stability.ai/v2beta/stable-image/generate/ultra",
         headers={
-            "authorization": f"Bearer {STABILITY_API_KEY}",
+            "authorization": f"Bearer {app_settings.stability_api_key}",
             "accept": "image/*"
         },
         files={

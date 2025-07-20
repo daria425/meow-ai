@@ -1,7 +1,7 @@
 import re
 import json
-from error_handlers import categorize_error
-from logger import logger
+from app.utils.error_handlers import categorize_error
+from app.utils.logger import logger
 def process_llm_json(response_content):
     """
     Process the response content from the LLM to extract JSON data.
