@@ -146,17 +146,19 @@ function GenerationStatusCard({
             <h4 className="font-semibold">Parameters</h4>
           </div>
           <div className="bg-emerald-100 p-4 rounded-lg h-48">
-            <p className="text-emerald-800">
-              <Slider
-                value={[generationConfig.iterations]}
-                max={10}
-                step={1}
-                className="w-full"
-                onValueChange={(value) =>
-                  handleUpdateGenerationConfig("iterations", value[0], true)
-                }
-              />
-            </p>
+            <label htmlFor="iteration-count" className="text-gray-500">
+              Iterations
+            </label>
+            <Slider
+              value={[generationConfig.iterations]}
+              id="iteration-count"
+              max={10}
+              step={1}
+              className="w-full"
+              onValueChange={(value) =>
+                handleUpdateGenerationConfig("iterations", value[0], true)
+              }
+            />
           </div>
         </div>
       </CardContent>
@@ -200,51 +202,24 @@ export function CatGenerator() {
     };
     setGenerationConfig(updatedConfig);
   };
-  if (isLoading) {
-    return (
-      <GenerationStatusCard
-        handleGenerate={handleGenerate}
-        state="loading"
-        original_image_url={undefined}
-        generationConfig={generationConfig}
-        handleUpdateGenerationConfig={handleUpdateGenerationConfig}
-      />
-    );
-  }
-  if (error) {
-    return (
-      <GenerationStatusCard
-        handleGenerate={handleGenerate}
-        state="error"
-        original_image_url={undefined}
-        generationConfig={generationConfig}
-        handleUpdateGenerationConfig={handleUpdateGenerationConfig}
-      />
-    );
-  }
-  if (!data) {
-    return (
-      <GenerationStatusCard
-        handleGenerate={handleGenerate}
-        state="idle"
-        original_image_url={undefined}
-        generationConfig={generationConfig}
-        handleUpdateGenerationConfig={handleUpdateGenerationConfig}
-      />
-    );
-  }
+  const currentState = isLoading
+    ? "loading"
+    : error
+    ? "error"
+    : data
+    ? "success"
+    : "idle";
   return (
     <div className="text-xs space-y-4">
       <GenerationStatusCard
-        state={"success"}
+        state={currentState}
         handleGenerate={handleGenerate}
-        original_image_url={data.original_image_url}
+        original_image_url={data?.original_image_url}
         generationConfig={generationConfig}
         handleUpdateGenerationConfig={handleUpdateGenerationConfig}
       />
-      {data.runs.map((run) => (
-        <RunCard key={run.iteration_num} run={run} />
-      ))}
+      {data &&
+        data.runs.map((run) => <RunCard key={run.iteration_num} run={run} />)}
     </div>
   );
 }
