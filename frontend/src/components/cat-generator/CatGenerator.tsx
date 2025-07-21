@@ -1,12 +1,18 @@
 import catCartoonizerServiceInstance from "../../services/catCartonizerService";
 import { useQuery } from "@tanstack/react-query";
-import type { GenerationRun, RunData } from "@/types/catGeneration";
+import type {
+  GenerationRun,
+  RunData,
+  GenerationConfig,
+} from "@/types/catGeneration";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
 import {
   Images,
   WandSparkles,
   MessageCircleMore,
   RefreshCcw,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useState } from "react";
 function RunCard({ run }: { run: RunData }) {
@@ -72,10 +78,18 @@ function GenerationStatusCard({
   state,
   original_image_url,
   handleGenerate,
+  generationConfig,
+  handleUpdateGenerationConfig,
 }: {
   state: "loading" | "error" | "success" | "idle";
   original_image_url: string | undefined;
   handleGenerate: () => void;
+  generationConfig: GenerationConfig;
+  handleUpdateGenerationConfig: (
+    updateKey: string,
+    updateValue: number | string,
+    convertValueToNumber?: boolean
+  ) => void;
 }) {
   return (
     <Card>
@@ -125,17 +139,43 @@ function GenerationStatusCard({
             )}
           </div>
         </div>
+        {/*Config Section*/}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4 text-emerald-500" />
+            <h4 className="font-semibold">Parameters</h4>
+          </div>
+          <div className="bg-emerald-100 p-4 rounded-lg h-48">
+            <p className="text-emerald-800">
+              <Slider
+                value={[generationConfig.iterations]}
+                max={10}
+                step={1}
+                className="w-full"
+                onValueChange={(value) =>
+                  handleUpdateGenerationConfig("iterations", value[0], true)
+                }
+              />
+            </p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
 }
 export function CatGenerator() {
-  const [startGeneration, setStartGeneration] = useState(false);
+  const [startGeneration, setStartGeneration] = useState<boolean>(false);
+  const [generationConfig, setGenerationConfig] = useState<GenerationConfig>({
+    iterations: 3,
+  });
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["cartoonizedCat"],
     queryFn: async () => {
       console.log("Fetching cartoonized cat...");
-      const response = await catCartoonizerServiceInstance.getCartoonizedCat();
+      const response = await catCartoonizerServiceInstance.getCartoonizedCat(
+        generationConfig
+      );
       setStartGeneration(false); // Reset after fetching
       return response as GenerationRun;
     },
@@ -146,12 +186,28 @@ export function CatGenerator() {
   const handleGenerate = () => {
     setStartGeneration(true);
   };
+  const handleUpdateGenerationConfig = (
+    updateKey: string,
+    updateValue: number | string,
+    convertValueToNumber: boolean = false
+  ) => {
+    const updatedConfig = {
+      ...generationConfig,
+      [updateKey]:
+        typeof updateValue === "string" && convertValueToNumber
+          ? parseInt(updateValue)
+          : updateValue,
+    };
+    setGenerationConfig(updatedConfig);
+  };
   if (isLoading) {
     return (
       <GenerationStatusCard
         handleGenerate={handleGenerate}
         state="loading"
         original_image_url={undefined}
+        generationConfig={generationConfig}
+        handleUpdateGenerationConfig={handleUpdateGenerationConfig}
       />
     );
   }
@@ -161,6 +217,8 @@ export function CatGenerator() {
         handleGenerate={handleGenerate}
         state="error"
         original_image_url={undefined}
+        generationConfig={generationConfig}
+        handleUpdateGenerationConfig={handleUpdateGenerationConfig}
       />
     );
   }
@@ -170,6 +228,8 @@ export function CatGenerator() {
         handleGenerate={handleGenerate}
         state="idle"
         original_image_url={undefined}
+        generationConfig={generationConfig}
+        handleUpdateGenerationConfig={handleUpdateGenerationConfig}
       />
     );
   }
@@ -179,6 +239,8 @@ export function CatGenerator() {
         state={"success"}
         handleGenerate={handleGenerate}
         original_image_url={data.original_image_url}
+        generationConfig={generationConfig}
+        handleUpdateGenerationConfig={handleUpdateGenerationConfig}
       />
       {data.runs.map((run) => (
         <RunCard key={run.iteration_num} run={run} />

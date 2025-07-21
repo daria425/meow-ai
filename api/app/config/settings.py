@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     "evaluation_model": "gpt-4o"
 
 }
+    max_iterations: int=10
 
 
 @lru_cache()

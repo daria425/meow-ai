@@ -21,3 +21,8 @@ export type GenerationRun = {
   original_image_url: string;
   runs: RunData[];
 };
+
+export type GenerationConfig = {
+  iterations: number;
+  //add stuff later
+};

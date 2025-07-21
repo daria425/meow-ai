@@ -28,10 +28,12 @@ def health_check():
     return {"status": "ok", "message": "API is running"}
 
 @app.get("/api/cartoonize-cat", response_model=GenerationRun)
-def get_cartoonized_cat():
+def get_cartoonized_cat(iterations:int):
     models=app_settings.models
     agent= CatCartoonizerAgent(
         models=models, 
     )
-    results=agent.run_generation_loop(iterations=3)  # Run the generation loop for 3 iterations
+    if iterations>app_settings.max_iterations:
+        iterations=app_settings.max_iterations
+    results=agent.run_generation_loop(iterations=iterations)  
     return results
