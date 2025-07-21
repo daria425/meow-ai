@@ -7,12 +7,15 @@ import type {
 } from "@/types/catGeneration";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
 import {
   Images,
   WandSparkles,
   MessageCircleMore,
   RefreshCcw,
   SlidersHorizontal,
+  Loader,
+  Repeat,
 } from "lucide-react";
 import { useState } from "react";
 function RunCard({ run }: { run: RunData }) {
@@ -74,6 +77,34 @@ function RunCard({ run }: { run: RunData }) {
   );
 }
 
+function StartGenerateButton({
+  state,
+  handleGenerate,
+}: {
+  state: "loading" | "error" | "success" | "idle";
+  handleGenerate: () => void;
+}) {
+  if (state === "loading") {
+    return (
+      <Button
+        className="bg-gradient-to-r from-[#622a9b] to-[#c157c7] text-white text-xs"
+        disabled={true}
+      >
+        <Loader className="h-4 w-4" />
+        Generating...
+      </Button>
+    );
+  }
+  return (
+    <Button
+      className="bg-gradient-to-r from-[#622a9b] to-[#c157c7] text-white text-xs"
+      onClick={handleGenerate}
+    >
+      <Repeat className="h-4 w-4" />
+      Generate
+    </Button>
+  );
+}
 function GenerationStatusCard({
   state,
   original_image_url,
@@ -95,7 +126,6 @@ function GenerationStatusCard({
     <Card>
       <CardHeader className="flex items-center gap-4">
         <CardTitle className="text-sm">Cat Cartoonizer</CardTitle>
-        <button onClick={handleGenerate}>Generate</button>
       </CardHeader>
       <CardContent className="grid grid-cols-3 gap-4">
         {/* Image Section */}
@@ -104,6 +134,7 @@ function GenerationStatusCard({
             <Images className="h-4 w-4 text-violet-500" />
             <h4 className="font-semibold">Seed Image</h4>
           </div>
+
           <div className="h-64">
             {state === "success" && original_image_url ? (
               <img
@@ -115,7 +146,9 @@ function GenerationStatusCard({
               <div className="h-full rounded-lg bg-zinc-500"></div> // placeholder
             )}
           </div>
+          <StartGenerateButton state={state} handleGenerate={handleGenerate} />
         </div>
+
         {/* Status Section */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">

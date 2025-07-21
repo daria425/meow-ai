@@ -2,6 +2,7 @@ from app.utils.get_image import get_cat_image, get_cartoonized_cat
 from app.utils.file_utils import load_txt_instuctions, get_image_data_url
 from app.utils.response_handlers import process_llm_json
 from app.config.settings import app_settings
+from app.services.websocket_manager import WebsocketManager
 from openai import OpenAI
 import base64
 from app.utils.logger import logger
@@ -164,6 +165,76 @@ class CatCartoonizerAgent:
             self.results["runs"].append(result_data)
             revised_prompt_response = revised_prompt_response.output_text
             generation_prompt = revised_prompt_response
+            self.generation_chat_history.append(
+                {
+                    "role":"assistant", 
+                    "content": revised_prompt_response
+                }
+            )
+        logger.info("Generation loop completed.")
+        with open("results.json", "w") as results_file:
+            json.dump(self.results, results_file, indent=4)
+        return self.results
+    
+    async def run_generation_loop_live(self, ws_manager: WebsocketManager, session_id: str, iterations: int = 3, ):
+        """
+        Run the main loop for a specified number of iterations to generate cartoonized cat images.
+        :param iterations: Number of iterations to run.
+        """
+        self.initialize_generation_chat()
+        generation_prompt = self.generate_prompt()
+        logger.info(f"Generated prompt for cartoon image: {generation_prompt}")
+        for i in range(iterations):
+            iteration_num=i+1
+            logger.info(f"Iteration {iteration_num} of {iterations}")
+            
+            output_image_path = f"images/cartoonized_cat_{iteration_num}.jpg"
+            logger.info(f"Generating cartoonized cat image with prompt attempt {iteration_num}: {generation_prompt}")
+            get_cartoonized_cat(
+                prompt=generation_prompt, 
+                output_image_path=output_image_path
+            )
+            with open(output_image_path, "rb") as image_file:
+                encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+            logger.info(f"Cartoonized cat image saved as '{output_image_path}'")
+            evaluation_response = self.get_evaluation(generation_prompt, encoded_image)
+            score = float(evaluation_response.get("evaluation", {}).get("overall_impression", 0))
+            if score >= 9:
+                logger.info(f"High quality result achieved with score {score}. Exiting loop early.")
+                break
+            else:
+                logger.warning(f"Low overall impression ({score}). Revising prompt.")
+            if "critique" not in evaluation_response:
+                logger.error("Critique not found in evaluation response. Exiting loop.")
+                break
+            logger.info(f"Evaluation response {iteration_num}: {evaluation_response}")
+            logger.info(f"Critique: {evaluation_response['critique']}")
+            self.generation_chat_history.append(
+                {
+                    "role":"user", 
+                    "content":f"""My feedback on the image generated from your description: 
+                    {evaluation_response["critique"]}
+                    Please provide a revised image generation prompt based on this feedback to improve the cartoonized image of my cat."""
+                }
+            )
+            revised_prompt_response =self. client.responses.create(
+                model=self.models["generation_model"],
+                input=self.generation_chat_history,
+                temperature=0.5
+            )
+            result_data={
+                "iteration_num": iteration_num,
+                "prompt": generation_prompt,
+                "cartoonized_image": get_image_data_url(output_image_path),
+                "evaluation": evaluation_response
+            }
+            self.results["runs"].append(result_data)
+            revised_prompt_response = revised_prompt_response.output_text
+            generation_prompt = revised_prompt_response
+            ws_msg={
+                "run_count": iteration_num
+            }
+            await ws_manager.notify(session_id, ws_msg)
             self.generation_chat_history.append(
                 {
                     "role":"assistant", 
