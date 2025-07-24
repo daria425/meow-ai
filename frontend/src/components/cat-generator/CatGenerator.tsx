@@ -8,6 +8,8 @@ import type {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
+import { useWebSocket } from "@/hooks/useWebsocket";
+import { websocketUrl } from "@/lib/api";
 import {
   Images,
   WandSparkles,
@@ -203,7 +205,9 @@ export function CatGenerator() {
   const [generationConfig, setGenerationConfig] = useState<GenerationConfig>({
     iterations: 3,
   });
-
+  const sessionId = 123;
+  const { status, message } = useWebSocket(`${websocketUrl}${sessionId}`);
+  console.log(status, message);
   const { data, isLoading, error } = useQuery({
     queryKey: ["cartoonizedCat"],
     queryFn: async () => {

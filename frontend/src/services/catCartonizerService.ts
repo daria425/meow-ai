@@ -1,4 +1,4 @@
-import api from "../lib/api";
+import { api } from "../lib/api";
 import mockGenerationRun from "../data/mockGenerationRun.json";
 import type { GenerationRun, GenerationConfig } from "../types/catGeneration";
 class catCartoonizerService {

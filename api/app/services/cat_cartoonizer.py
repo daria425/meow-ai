@@ -231,10 +231,7 @@ class CatCartoonizerAgent:
             self.results["runs"].append(result_data)
             revised_prompt_response = revised_prompt_response.output_text
             generation_prompt = revised_prompt_response
-            ws_msg={
-                "run_count": iteration_num
-            }
-            await ws_manager.notify(session_id, ws_msg)
+            await ws_manager.notify(session_id, result_data)
             self.generation_chat_history.append(
                 {
                     "role":"assistant", 
