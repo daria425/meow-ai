@@ -116,6 +116,7 @@ class CatCartoonizerAgent:
         :param iterations: Number of iterations to run.
         """
         self.initialize_generation_chat()
+
         generation_prompt = self.generate_prompt()
         logger.info(f"Generated prompt for cartoon image: {generation_prompt}")
         for i in range(iterations):
@@ -176,12 +177,16 @@ class CatCartoonizerAgent:
             json.dump(self.results, results_file, indent=4)
         return self.results
     
-    async def run_generation_loop_live(self, ws_manager: WebsocketManager, session_id: str, iterations: int = 3, ):
+    async def run_generation_loop_live(self, ws_manager: WebsocketManager, session_id: str, iterations: int = 3 ):
         """
         Run the main loop for a specified number of iterations to generate cartoonized cat images.
         :param iterations: Number of iterations to run.
         """
         self.initialize_generation_chat()
+        await ws_manager.notify(session_id=session_id, message={
+            "type": "initial_notification",
+            "original_image_url": self.original_image_url
+        } )
         generation_prompt = self.generate_prompt()
         logger.info(f"Generated prompt for cartoon image: {generation_prompt}")
         for i in range(iterations):
@@ -231,7 +236,7 @@ class CatCartoonizerAgent:
             self.results["runs"].append(result_data)
             revised_prompt_response = revised_prompt_response.output_text
             generation_prompt = revised_prompt_response
-            await ws_manager.notify(session_id, result_data)
+            await ws_manager.notify(session_id, {**result_data, "type": "run_notification"})
             self.generation_chat_history.append(
                 {
                     "role":"assistant", 

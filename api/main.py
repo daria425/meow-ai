@@ -67,7 +67,7 @@ async def get_cartoonized_cat_live(iterations:int, session_id:str):
     if iterations>app_settings.max_iterations:
         iterations=app_settings.max_iterations
     results=await agent.run_generation_loop_live(iterations=iterations, session_id=session_id, ws_manager=ws_manager_instance)  
-    return results
+    return results 
 
 @app.websocket("/ws/cartoonize-cat/{session_id}")
 async def ws_endpoint(websocket: WebSocket, session_id: str):

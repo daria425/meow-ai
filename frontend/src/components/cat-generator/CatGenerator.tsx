@@ -2,8 +2,9 @@ import catCartoonizerServiceInstance from "../../services/catCartonizerService";
 import { useQuery } from "@tanstack/react-query";
 import type {
   GenerationRun,
-  RunData,
+  WebSocketMessage,
   GenerationConfig,
+  RunData,
 } from "@/types/catGeneration";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -19,7 +20,7 @@ import {
   Loader,
   Repeat,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 function RunCard({ run }: { run: RunData }) {
   return (
     <Card>
@@ -205,18 +206,51 @@ export function CatGenerator() {
   const [generationConfig, setGenerationConfig] = useState<GenerationConfig>({
     iterations: 3,
   });
+  const [generationRunData, setGenerationRunData] = useState<GenerationRun>({
+    original_image_url: "",
+    runs: [],
+  });
   const sessionId = 123;
   const { status, message } = useWebSocket(`${websocketUrl}${sessionId}`);
+  const addRunData = (messageData: WebSocketMessage) => {
+    console.log(messageData);
+    if (
+      messageData.type === "initial_notification" &&
+      messageData.original_image_url
+    ) {
+      setGenerationRunData((prevData) => ({
+        ...prevData,
+        original_image_url: messageData.original_image_url,
+      }));
+    } else if (
+      messageData.type === "run_notification" &&
+      messageData.iteration_num &&
+      messageData.prompt
+    ) {
+      setGenerationRunData((prevData) => ({
+        ...prevData,
+        runs: [...prevData.runs, messageData as RunData],
+      }));
+    }
+  };
+
+  // Handle WebSocket messages - message is already the parsed dict
+  useEffect(() => {
+    if (message) {
+      addRunData(message);
+    }
+  }, [message]);
   console.log(status, message);
-  const { data, isLoading, error } = useQuery({
+  const { error } = useQuery({
     queryKey: ["cartoonizedCat"],
     queryFn: async () => {
       console.log("Fetching cartoonized cat...");
-      const response = await catCartoonizerServiceInstance.getCartoonizedCat(
-        generationConfig
+      catCartoonizerServiceInstance.getLiveCartoonizedCatGeneration(
+        generationConfig,
+        sessionId
       );
       setStartGeneration(false); // Reset after fetching
-      return response as GenerationRun;
+      return { success: true, message: "Generation started successfully" };
     },
     enabled: startGeneration, // Only run query when startGeneration is true
     refetchOnWindowFocus: false,
@@ -239,24 +273,27 @@ export function CatGenerator() {
     };
     setGenerationConfig(updatedConfig);
   };
-  const currentState = isLoading
-    ? "loading"
-    : error
-    ? "error"
-    : data
-    ? "success"
-    : "idle";
+  const currentState =
+    generationRunData.runs.length < generationConfig.iterations
+      ? "loading"
+      : error
+      ? "error"
+      : generationRunData.original_image_url &&
+        generationRunData.runs.length == generationConfig.iterations
+      ? "success"
+      : "idle";
   return (
     <div className="text-xs space-y-4">
       <GenerationStatusCard
         state={currentState}
         handleGenerate={handleGenerate}
-        original_image_url={data?.original_image_url}
+        original_image_url={generationRunData.original_image_url}
         generationConfig={generationConfig}
         handleUpdateGenerationConfig={handleUpdateGenerationConfig}
       />
-      {data &&
-        data.runs.map((run) => <RunCard key={run.iteration_num} run={run} />)}
+      {generationRunData.runs.map((run) => (
+        <RunCard key={run.iteration_num} run={run} />
+      ))}
     </div>
   );
 }

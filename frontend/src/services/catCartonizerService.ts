@@ -14,7 +14,24 @@ class catCartoonizerService {
     }
     try {
       const { iterations } = generationConfig;
-      const response = await api.get("api/cartoonize-cat", {
+      const response = await api.get("/api/cartoonize-cat/live", {
+        params: {
+          iterations: iterations,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching cartoonized cat:", error);
+      return mockGenerationRun as GenerationRun;
+    }
+  }
+  async getLiveCartoonizedCatGeneration(
+    generationConfig: GenerationConfig,
+    sessionId: string | number
+  ) {
+    try {
+      const { iterations } = generationConfig;
+      const response = await api.get(`/api/cartoonize-cat/live/${sessionId}`, {
         params: {
           iterations: iterations,
         },

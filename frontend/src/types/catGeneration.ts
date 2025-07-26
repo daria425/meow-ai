@@ -17,6 +17,22 @@ export type RunData = {
   evaluation: EvaluationData;
 };
 
+type InitialNotificationMessage = {
+  original_image_url: string;
+  type: "initial_notification";
+};
+type RunNotificationMessage = {
+  type: "run_notification";
+  iteration_num: number;
+  prompt: string;
+  cartoonized_image: string;
+  evaluation: EvaluationData;
+};
+
+export type WebSocketMessage =
+  | InitialNotificationMessage
+  | RunNotificationMessage;
+
 export type GenerationRun = {
   original_image_url: string;
   runs: RunData[];

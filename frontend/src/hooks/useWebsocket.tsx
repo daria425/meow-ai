@@ -4,10 +4,7 @@ function useWebSocket(url: string | null) {
   const connection = useRef<WebSocket | null>(null);
   const [status, setStatus] = useState({ connected: false, error: false });
   const [message, setMessage] = useState<any>(null); // Use `any` for flexibility, can be replaced with a specific type later
-  /*
 
-  */
-  console.log("Message", message);
   useEffect(() => {
     if (!url) {
       console.warn("WebSocket URL is null or undefined");
