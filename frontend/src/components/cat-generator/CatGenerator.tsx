@@ -2,6 +2,7 @@ import catCartoonizerServiceInstance from "../../services/catCartonizerService";
 import { useQuery } from "@tanstack/react-query";
 import type {
   GenerationRun,
+  GenerationRunCompleteResponse,
   WebSocketMessage,
   GenerationConfig,
   RunData,
@@ -11,6 +12,8 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { useWebSocket } from "@/hooks/useWebsocket";
 import { websocketUrl } from "@/lib/api";
+import { simulateMockData } from "@/lib/utils";
+import mockGenerationRunData from "../../data/mockRun.json";
 import {
   Images,
   WandSparkles,
@@ -139,7 +142,7 @@ function GenerationStatusCard({
           </div>
 
           <div className="h-64">
-            {state === "success" && original_image_url ? (
+            {original_image_url ? (
               <img
                 src={original_image_url}
                 className="object-cover w-full h-full rounded-lg"
@@ -241,23 +244,34 @@ export function CatGenerator() {
     }
   }, [message]);
   console.log(status, message);
-  const { error } = useQuery({
+  const { data, error, isLoading } = useQuery({
     queryKey: ["cartoonizedCat"],
     queryFn: async () => {
       console.log("Fetching cartoonized cat...");
-      catCartoonizerServiceInstance.getLiveCartoonizedCatGeneration(
-        generationConfig,
-        sessionId
-      );
+      const response =
+        await catCartoonizerServiceInstance.getLiveCartoonizedCatGeneration(
+          generationConfig,
+          sessionId
+        );
       setStartGeneration(false); // Reset after fetching
-      return { success: true, message: "Generation started successfully" };
+      return response as GenerationRunCompleteResponse;
     },
     enabled: startGeneration, // Only run query when startGeneration is true
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
   const handleGenerate = () => {
-    setStartGeneration(true);
+    // Clear data first
+    setGenerationRunData({
+      original_image_url: "",
+      runs: [],
+    });
+
+    if (import.meta.env.MODE === "development") {
+      simulateMockData(mockGenerationRunData, setGenerationRunData, 2000);
+    } else {
+      setStartGeneration(true);
+    }
   };
   const handleUpdateGenerationConfig = (
     updateKey: string,
@@ -274,11 +288,12 @@ export function CatGenerator() {
     setGenerationConfig(updatedConfig);
   };
   const currentState =
-    generationRunData.runs.length < generationConfig.iterations
+    isLoading && generationRunData.runs.length < generationConfig.iterations
       ? "loading"
       : error
       ? "error"
-      : generationRunData.original_image_url &&
+      : data &&
+        generationRunData.original_image_url &&
         generationRunData.runs.length == generationConfig.iterations
       ? "success"
       : "idle";

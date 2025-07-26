@@ -42,3 +42,10 @@ export type GenerationConfig = {
   iterations: number;
   //add stuff later
 };
+
+export type GenerationRunCompleteResponse = {
+  status: string;
+  message: string;
+  total_iterations: number;
+  generation_data: GenerationRun;
+};

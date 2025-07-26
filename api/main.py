@@ -9,7 +9,7 @@ from fastapi.responses import RedirectResponse
 from app.services.cat_cartoonizer import CatCartoonizerAgent
 from app.services.websocket_manager import WebsocketManager
 from app.config.settings import app_settings
-from app.models.generation_run import GenerationRun
+from app.models.generation_run import GenerationRunComplete
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -47,18 +47,8 @@ def health_check():
     """
     return {"status": "ok", "message": "API is running"}
 
-@app.get("/api/cartoonize-cat", response_model=GenerationRun)
-def get_cartoonized_cat(iterations:int):
-    models=app_settings.models
-    agent= CatCartoonizerAgent(
-        models=models, 
-    )
-    if iterations>app_settings.max_iterations:
-        iterations=app_settings.max_iterations
-    results=agent.run_generation_loop(iterations=iterations)  
-    return results
 
-@app.get("/api/cartoonize-cat/live/{session_id}", response_model=GenerationRun)
+@app.get("/api/cartoonize-cat/live/{session_id}", response_model=GenerationRunComplete)
 async def get_cartoonized_cat_live(iterations:int, session_id:str):
     models=app_settings.models
     agent= CatCartoonizerAgent(

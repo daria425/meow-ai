@@ -21,3 +21,9 @@ class RunData(BaseModel):
 class GenerationRun(BaseModel):
     original_image_url: str
     runs: List[RunData] = []
+
+class GenerationRunComplete(BaseModel):
+    status: str
+    total_iterations: int
+    generation_data: GenerationRun
+    message:str
