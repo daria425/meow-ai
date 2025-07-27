@@ -9,7 +9,7 @@ import base64
 from app.utils.logger import logger
 from typing import Dict
 import json
-
+import psutil
 
 class CatCartoonizerAgent:
     def __init__(self, models:Dict[str, str]):
@@ -124,8 +124,15 @@ class CatCartoonizerAgent:
         } )
         generation_prompt = self.generate_prompt()
         logger.info(f"Generated prompt for cartoon image: {generation_prompt}")
+        logger.info(f"=== MEMORY DEBUG START ===")
+        logger.info(f"Available memory: {psutil.virtual_memory().available / 1024 / 1024:.1f} MB")
+        logger.info(f"Total memory: {psutil.virtual_memory().total / 1024 / 1024:.1f} MB")
+        logger.info(f"Memory percent: {psutil.virtual_memory().percent}%")
+    
         for i in range(iterations):
             iteration_num=i+1
+            mem_before = psutil.virtual_memory()
+            logger.info(f"Iteration {i+1} - Memory before: {mem_before.percent}% ({mem_before.available / 1024 / 1024:.1f} MB free)")
             logger.info(f"Iteration {iteration_num} of {iterations}")
             
             output_image_path = f"images/cartoonized_cat_{iteration_num}.jpg"
@@ -147,6 +154,7 @@ class CatCartoonizerAgent:
                 "evaluation": evaluation_response
             }
             self.results["runs"].append(result_data)
+            logger.info(f"Sending run_notification message to {session_id}")
             await ws_manager.notify(session_id, {**result_data, "type": "run_notification"})
             
             if score >= 9:
@@ -162,7 +170,6 @@ class CatCartoonizerAgent:
             # Only continue with revision if we're not on the last iteration
             if iteration_num < iterations:
                 logger.info(f"Evaluation response {iteration_num}: {evaluation_response}")
-                logger.info(f"Critique: {evaluation_response['critique']}")
                 self.generation_chat_history.append(
                     {
                         "role":"user", 
@@ -174,9 +181,12 @@ class CatCartoonizerAgent:
                 revised_prompt_response = self.client.responses.create(
                     model=self.models["generation_model"],
                     input=self.generation_chat_history,
-                    temperature=0.5
+                    temperature=0.3
                 )
+                mem_after = psutil.virtual_memory()
+                logger.info(f"Iteration {i+1} - Memory after: {mem_after.percent}% ({mem_after.available / 1024 / 1024:.1f} MB free)")
                 revised_prompt_response = revised_prompt_response.output_text
+                logger.info(f"Revised prompt:{revised_prompt_response}")
                 generation_prompt = revised_prompt_response
                 self.generation_chat_history.append(
                     {
@@ -188,7 +198,7 @@ class CatCartoonizerAgent:
         logger.info("Generation loop completed.")
         with open("results.json", "w") as results_file:
             json.dump(self.results, results_file, indent=4)
-        
+
         return {
             "status": "success",
             "message": "Generation completed successfully",

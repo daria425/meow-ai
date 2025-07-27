@@ -22,12 +22,12 @@ gcloud run deploy $SERVICE_NAME \
   --image=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME \
   --region=$REGION \
   --platform=managed \
-  --memory=512Mi \
-  --cpu=0.5 \
-  --timeout=600 \
+  --memory=8Gi \
+  --cpu=4 \
+  --timeout=1800 \
   --min-instances=0 \
   --max-instances=3 \
   --allow-unauthenticated \
   --set-secrets=OPENAI_API_KEY=OPENAI_API_KEY:latest \
   --set-secrets=STABILITY_API_KEY=STABILITY_API_KEY:latest \
-  --set-secrets=CATS_API_KEY=CATS_API_KEY:latest
+  --set-secrets=CATS_API_KEY=CATS_API_KEY:latest \
