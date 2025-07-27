@@ -16,3 +16,22 @@ export function simulateMockData<T>(
     }, delay);
   }
 }
+
+export function formatLabel(label: string) {
+  return label
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+export function getBadgeColor(metricValue: string) {
+  const metricNumber = parseFloat(metricValue); // Use parseFloat to handle decimals like "7.5"
+
+  if (metricNumber < 5) {
+    return "bg-red-500 text-white";
+  } else if (metricNumber >= 5 && metricNumber < 7) {
+    return "bg-orange-500 text-white";
+  } else {
+    return "bg-green-500 text-white";
+  }
+}

@@ -2,14 +2,15 @@
 import asyncio
 import signal
 from contextlib import asynccontextmanager
+from typing import Union
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 
 from app.services.cat_cartoonizer import CatCartoonizerAgent
 from app.services.websocket_manager import WebsocketManager
 from app.config.settings import app_settings
-from app.models.generation_run import GenerationRunComplete
+from app.models.generation_run import GenerationRunComplete, GenerationRunError
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -48,7 +49,7 @@ def health_check():
     return {"status": "ok", "message": "API is running"}
 
 
-@app.get("/api/cartoonize-cat/live/{session_id}", response_model=GenerationRunComplete)
+@app.get("/api/cartoonize-cat/live/{session_id}", response_model=Union[GenerationRunComplete, GenerationRunError ])
 async def get_cartoonized_cat_live(iterations:int, session_id:str):
     models=app_settings.models
     agent= CatCartoonizerAgent(
@@ -57,6 +58,9 @@ async def get_cartoonized_cat_live(iterations:int, session_id:str):
     if iterations>app_settings.max_iterations:
         iterations=app_settings.max_iterations
     results=await agent.run_generation_loop_live(iterations=iterations, session_id=session_id, ws_manager=ws_manager_instance)  
+    if results.get("status")=="error":
+        return JSONResponse(status_code=500, content=results)
+
     return results 
 
 @app.websocket("/ws/cartoonize-cat/{session_id}")

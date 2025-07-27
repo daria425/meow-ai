@@ -12,7 +12,7 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { useWebSocket } from "@/hooks/useWebsocket";
 import { websocketUrl } from "@/lib/api";
-import { simulateMockData } from "@/lib/utils";
+import { simulateMockData, formatLabel, getBadgeColor } from "@/lib/utils";
 import mockGenerationRunData from "../../data/mockRun.json";
 import {
   Images,
@@ -23,8 +23,11 @@ import {
   Loader,
   Repeat,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 function RunCard({ run }: { run: RunData }) {
+  const evaluationMetrics = Object.entries(run.evaluation.evaluation);
+  console.log(evaluationMetrics);
   return (
     <Card>
       <CardHeader className="flex items-center gap-4">
@@ -33,7 +36,7 @@ function RunCard({ run }: { run: RunData }) {
         </div>
         <CardTitle className="text-sm">Iteration {run.iteration_num}</CardTitle>
       </CardHeader>
-      <CardContent className="grid grid-cols-3 gap-4">
+      <CardContent className="sm:grid sm:grid-cols-3 flex flex-col gap-4">
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <WandSparkles className="h-4 w-4 text-violet-500" />
@@ -76,6 +79,19 @@ function RunCard({ run }: { run: RunData }) {
           </ul> */}
           <div className="bg-emerald-100 p-4 rounded-lg h-48 overflow-y-auto">
             <p className="leading-6">"{run.evaluation.critique}"</p>
+          </div>
+          <div className="space-y-2">
+            {evaluationMetrics.map(([label, metric], idx) => (
+              <div
+                key={idx}
+                className="flex justify-between items-center bg-gray-50 p-2 rounded"
+              >
+                <span className="text-xs font-medium text-gray-600">
+                  {formatLabel(label)}:
+                </span>
+                <Badge className={getBadgeColor(metric)}>{metric}/10</Badge>
+              </div>
+            ))}
           </div>
         </div>
       </CardContent>
@@ -125,7 +141,7 @@ function GenerationStatusCard({
   handleUpdateGenerationConfig: (
     updateKey: string,
     updateValue: number | string,
-    convertValueToNumber?: boolean
+    convertValueToNumber: boolean
   ) => void;
 }) {
   return (
@@ -133,7 +149,7 @@ function GenerationStatusCard({
       <CardHeader className="flex items-center gap-4">
         <CardTitle className="text-sm">Cat Cartoonizer</CardTitle>
       </CardHeader>
-      <CardContent className="grid grid-cols-3 gap-4">
+      <CardContent className="sm:grid sm:grid-cols-3 flex flex-col gap-4">
         {/* Image Section */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -287,16 +303,15 @@ export function CatGenerator() {
     };
     setGenerationConfig(updatedConfig);
   };
-  const currentState =
-    isLoading && generationRunData.runs.length < generationConfig.iterations
-      ? "loading"
-      : error
-      ? "error"
-      : data &&
-        generationRunData.original_image_url &&
-        generationRunData.runs.length == generationConfig.iterations
-      ? "success"
-      : "idle";
+  const currentState = isLoading
+    ? "loading"
+    : error
+    ? "error"
+    : data &&
+      generationRunData.original_image_url &&
+      generationRunData.runs.length > 0
+    ? "success"
+    : "idle";
   return (
     <div className="text-xs space-y-4">
       <GenerationStatusCard

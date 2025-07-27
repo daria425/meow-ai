@@ -2,7 +2,7 @@
 import time
 from functools import wraps
 from app.utils.logger import logger
-
+from app.utils.error_handlers import categorize_error
 def retry_on_failure(max_retries:int=3, delay:float=1.0, backoff_exp:float=2.0):
     def decorator(func):
         @wraps(func)
@@ -36,8 +36,13 @@ def retry_on_failure(max_retries:int=3, delay:float=1.0, backoff_exp:float=2.0):
                     "critique": f"Unable to evaluate due to technical issues: {str(last_exception)}. Using default scores."
                 }
             else:
-                # Re-raise the exception for other functions
-                raise last_exception
+                error_message=f"Function {func.__name__} failed: {str(last_exception)}"
+                error_category=categorize_error(error_message)
+                return {
+                    "status": "error",
+                    "category": error_category,
+                    "message": error_message,
+                }
                 
         return retry_wrapper
     return decorator

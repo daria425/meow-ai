@@ -27,3 +27,8 @@ class GenerationRunComplete(BaseModel):
     total_iterations: int
     generation_data: GenerationRun
     message:str
+
+class GenerationRunError(BaseModel):
+    status: str
+    category: str
+    message:str
