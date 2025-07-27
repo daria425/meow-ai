@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
 app=FastAPI(lifespan=lifespan)
 ws_manager_instance=WebsocketManager()
 
-origins=["http://localhost:3000", "http://localhost:5173", "https://some-public-frontend.vercel.app"]
+origins=["http://localhost:3000", "http://localhost:5173", "https://responsible-youth-production.up.railway.app"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
