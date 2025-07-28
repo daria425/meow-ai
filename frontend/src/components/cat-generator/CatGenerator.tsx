@@ -229,6 +229,9 @@ export function CatGenerator() {
     original_image_url: "",
     runs: [],
   });
+  const [generationState, setGenerationState] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
   const sessionId = 123;
   const { status, message } = useWebSocket(`${websocketUrl}${sessionId}`);
   const addRunData = (messageData: WebSocketMessage) => {
@@ -252,15 +255,13 @@ export function CatGenerator() {
       }));
     }
   };
-
-  // Handle WebSocket messages - message is already the parsed dict
   useEffect(() => {
     if (message) {
       addRunData(message);
     }
   }, [message]);
   console.log(status, message);
-  const { data, error, isLoading } = useQuery({
+  const { error, isLoading } = useQuery({
     queryKey: ["cartoonizedCat"],
     queryFn: async () => {
       console.log("Fetching cartoonized cat...");
@@ -270,20 +271,30 @@ export function CatGenerator() {
           sessionId
         );
       setStartGeneration(false); // Reset after fetching
+      setGenerationState("success");
       return response as GenerationRunCompleteResponse;
     },
     enabled: startGeneration, // Only run query when startGeneration is true
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+  useEffect(() => {
+    if (isLoading) {
+      setGenerationState("loading");
+    } else if (error) {
+      setGenerationState("error");
+    }
+  }, [isLoading, error]);
   const handleGenerate = () => {
     // Clear data first
+    setGenerationState("idle");
     setGenerationRunData({
       original_image_url: "",
       runs: [],
     });
 
     if (import.meta.env.MODE === "development") {
+      setGenerationState("loading");
       simulateMockData(mockGenerationRunData, setGenerationRunData, 2000);
     } else {
       setStartGeneration(true);
@@ -303,19 +314,10 @@ export function CatGenerator() {
     };
     setGenerationConfig(updatedConfig);
   };
-  const currentState = isLoading
-    ? "loading"
-    : error
-    ? "error"
-    : data &&
-      generationRunData.original_image_url &&
-      generationRunData.runs.length > 0
-    ? "success"
-    : "idle";
   return (
     <div className="text-xs space-y-4">
       <GenerationStatusCard
-        state={currentState}
+        state={generationState}
         handleGenerate={handleGenerate}
         original_image_url={generationRunData.original_image_url}
         generationConfig={generationConfig}
