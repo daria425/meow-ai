@@ -1,4 +1,7 @@
 import catCartoonizerServiceInstance from "../../services/catCartonizerService";
+import meowAIPlaceholder from "../../assets/meow_ai_placeholder.svg";
+import lottieLoader from "../../assets/lottie_loader.lottie";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { useQuery } from "@tanstack/react-query";
 import type {
   GenerationRun,
@@ -165,7 +168,13 @@ function GenerationStatusCard({
                 alt="Original Cat"
               />
             ) : (
-              <div className="h-full rounded-lg bg-zinc-500"></div> // placeholder
+              <div className="h-full rounded-lg bg-zinc-500 flex justify-center items-center">
+                <img
+                  src={meowAIPlaceholder}
+                  alt="Cat placeholder"
+                  className="h-64"
+                />
+              </div> // placeholder
             )}
           </div>
           <StartGenerateButton state={state} handleGenerate={handleGenerate} />
@@ -179,7 +188,10 @@ function GenerationStatusCard({
           </div>
           <div className="bg-blue-100 p-4 rounded-lg h-48 flex items-center justify-center">
             {state === "loading" && (
-              <p className="text-blue-600">Generating...</p>
+              <div className="flex flex-col justify-center items-center gap-2">
+                <DotLottieReact src={lottieLoader} loop autoplay />
+                <p className="text-pink-500">Generating...</p>
+              </div>
             )}
             {state === "error" && (
               <p className="text-red-600">Error generating cat cartoon.</p>
