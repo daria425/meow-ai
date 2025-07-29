@@ -3,6 +3,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@theme {
+  --color-lavender: #7769b6;
+}
+
 @theme inline {
   --default-font-family: "Helvetica Neue", Arial, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
