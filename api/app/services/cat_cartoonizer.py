@@ -51,6 +51,7 @@ class CatCartoonizerAgent:
             }
         ]
 
+        
     def generate_prompt(self):
             """
             Generate a prompt for cartoonizing the cat image.
@@ -112,6 +113,59 @@ class CatCartoonizerAgent:
         print(f"Evaluation response: {evaluation_response}")
         evaluation_response = evaluation_response.output_text
         return process_llm_json(evaluation_response)
+    async def revise_prompt(self, evaluation_response:dict, iteration_num:int, session_id: str, ws_manager: WebsocketManager)->str:
+                think_prompt={
+                     "role":"user",
+                     "content": f"""
+            My feedback on the image generated from your description: 
+            {evaluation_response["critique"]}
+            
+            Please think through:
+            1. What specific issues were identified in the feedback?
+            2. What aspects of the original prompt might have caused these issues?
+            3. What changes should be made to address each concern?
+            
+            Please analyze the feedback step by step and concisely answer each question.
+            Your response will be presented with 'AI had a thought: <your response>' so make sure you don't yap 
+            DO NOT USE MARKDOWN
+            EXAMPLES:
+            "I need to emphasize sharper whiskers and brighter eyes. I added too much background detail that distracts from the cat."
+"My cartoon style was too realistic. I should emphasize rounded features and simplify colors."  
+"I missed the tabby stripes. I need to specify the orange and black pattern more clearly."
+"I made the ears too small and eyes not expressive enough. I should add playful pose details."
+"My color palette was too muted. I need vibrant cartoon colors and better contrast."
+"I got the face proportions wrong - I should make eyes larger and nose smaller for a cute cartoon look."
+            """}
+                think_input=self.generation_chat_history+[think_prompt]
+                ai_think=self.client.responses.create(
+                                     model=self.models["generation_model"],
+                    input=think_input,
+                    temperature=0.3
+                ).output_text
+                logger.info(f"AI had a thought:{ai_think}")
+                thought_notification={
+        "iteration_num": iteration_num,
+                "thought": ai_think,
+                "type": "think_notification"
+
+                }
+                await ws_manager.notify(session_id, thought_notification)
+                self.generation_chat_history.append(
+                    {
+                        "role":"user", 
+                        "content":f"""My feedback on the image generated from your description: 
+                        {evaluation_response["critique"]}
+                        Please provide a revised image generation prompt based on this feedback to improve the cartoonized image of my cat."""
+                    }
+                )
+                revised_prompt_response = self.client.responses.create(
+                    model=self.models["generation_model"],
+                    input=self.generation_chat_history,
+                    temperature=0.3
+                )
+                revised_prompt_response = revised_prompt_response.output_text
+                return revised_prompt_response
+
     async def run_generation_loop_live(self, ws_manager: WebsocketManager, session_id: str, iterations: int = 3 ):
         """
         Run the main loop for a specified number of iterations to generate cartoonized cat images.
@@ -123,16 +177,9 @@ class CatCartoonizerAgent:
             "original_image_url": self.original_image_url
         } )
         generation_prompt = self.generate_prompt()
-        logger.info(f"Generated prompt for cartoon image: {generation_prompt}")
-        logger.info(f"=== MEMORY DEBUG START ===")
-        logger.info(f"Available memory: {psutil.virtual_memory().available / 1024 / 1024:.1f} MB")
-        logger.info(f"Total memory: {psutil.virtual_memory().total / 1024 / 1024:.1f} MB")
-        logger.info(f"Memory percent: {psutil.virtual_memory().percent}%")
     
         for i in range(iterations):
             iteration_num=i+1
-            mem_before = psutil.virtual_memory()
-            logger.info(f"Iteration {i+1} - Memory before: {mem_before.percent}% ({mem_before.available / 1024 / 1024:.1f} MB free)")
             logger.info(f"Iteration {iteration_num} of {iterations}")
             
             output_image_path = f"images/cartoonized_cat_{iteration_num}.jpg"
@@ -170,22 +217,7 @@ class CatCartoonizerAgent:
             # Only continue with revision if we're not on the last iteration
             if iteration_num < iterations:
                 logger.info(f"Evaluation response {iteration_num}: {evaluation_response}")
-                self.generation_chat_history.append(
-                    {
-                        "role":"user", 
-                        "content":f"""My feedback on the image generated from your description: 
-                        {evaluation_response["critique"]}
-                        Please provide a revised image generation prompt based on this feedback to improve the cartoonized image of my cat."""
-                    }
-                )
-                revised_prompt_response = self.client.responses.create(
-                    model=self.models["generation_model"],
-                    input=self.generation_chat_history,
-                    temperature=0.3
-                )
-                mem_after = psutil.virtual_memory()
-                logger.info(f"Iteration {i+1} - Memory after: {mem_after.percent}% ({mem_after.available / 1024 / 1024:.1f} MB free)")
-                revised_prompt_response = revised_prompt_response.output_text
+                revised_prompt_response=await self.revise_prompt(evaluation_response=evaluation_response, ws_manager=ws_manager, iteration_num=iteration_num, session_id=session_id)
                 logger.info(f"Revised prompt:{revised_prompt_response}")
                 generation_prompt = revised_prompt_response
                 self.generation_chat_history.append(

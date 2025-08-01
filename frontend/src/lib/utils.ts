@@ -35,3 +35,18 @@ export function getBadgeColor(metricValue: string) {
     return "bg-green-500 text-white";
   }
 }
+
+function generateSessionId() {
+  return crypto.randomUUID();
+}
+
+export function createOrRetrieveSessionId() {
+  const storeKey = "cat-gen-session";
+  const existingSession = localStorage.getItem(storeKey);
+  if (existingSession) {
+    return existingSession;
+  }
+  const newSessionId = generateSessionId();
+  localStorage.setItem(storeKey, newSessionId);
+  return newSessionId;
+}

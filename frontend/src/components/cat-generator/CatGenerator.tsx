@@ -15,7 +15,12 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { useWebSocket } from "@/hooks/useWebsocket";
 import { websocketUrl } from "@/lib/api";
-import { simulateMockData, formatLabel, getBadgeColor } from "@/lib/utils";
+import {
+  simulateMockData,
+  formatLabel,
+  getBadgeColor,
+  createOrRetrieveSessionId,
+} from "@/lib/utils";
 import mockGenerationRunData from "../../data/mockRun.json";
 import {
   Images,
@@ -27,7 +32,7 @@ import {
   Repeat,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 function RunCard({ run }: { run: RunData }) {
   const evaluationMetrics = Object.entries(run.evaluation.evaluation);
   console.log(evaluationMetrics);
@@ -244,7 +249,7 @@ export function CatGenerator() {
   const [generationState, setGenerationState] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
-  const sessionId = 123;
+  const sessionId = useMemo(() => createOrRetrieveSessionId(), []);
   const { status, message } = useWebSocket(`${websocketUrl}${sessionId}`);
   const addRunData = (messageData: WebSocketMessage) => {
     console.log(messageData);
