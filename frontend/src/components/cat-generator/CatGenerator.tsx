@@ -11,6 +11,7 @@ import type {
   RunData,
 } from "@/types/catGeneration";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import OnboardingModal from "./OnboardingModal";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { useWebSocket } from "@/hooks/useWebsocket";
@@ -239,6 +240,7 @@ function GenerationStatusCard({
 }
 export function CatGenerator() {
   const [startGeneration, setStartGeneration] = useState<boolean>(false);
+  const [showOnboardingModal, setShowOnboardingModal] = useState<boolean>(true);
   const [generationConfig, setGenerationConfig] = useState<GenerationConfig>({
     iterations: 3,
   });
@@ -278,6 +280,9 @@ export function CatGenerator() {
     }
   }, [message]);
   console.log(status, message);
+  const handleCloseOnboarding = () => {
+    setShowOnboardingModal(false);
+  };
   const { error, isLoading } = useQuery({
     queryKey: ["cartoonizedCat"],
     queryFn: async () => {
@@ -333,6 +338,12 @@ export function CatGenerator() {
   };
   return (
     <div className="text-xs space-y-4">
+      {showOnboardingModal && (
+        <OnboardingModal
+          isOpen={showOnboardingModal}
+          onClose={handleCloseOnboarding}
+        />
+      )}
       <GenerationStatusCard
         state={generationState}
         handleGenerate={handleGenerate}
