@@ -20,12 +20,12 @@ import { Button } from "@/components/ui/button";
 import { useWebSocket } from "@/hooks/useWebsocket";
 import { websocketUrl } from "@/lib/api";
 import {
-  simulateMockData,
+  // simulateMockData,
   formatLabel,
   getBadgeColor,
   createOrRetrieveSessionId,
 } from "@/lib/utils";
-import mockGenerationRunData from "../../data/mockRun.json";
+// import mockGenerationRunData from "../../data/mockRun.json";
 import {
   Images,
   WandSparkles,
