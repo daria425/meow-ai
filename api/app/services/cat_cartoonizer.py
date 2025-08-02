@@ -25,11 +25,15 @@ class CatCartoonizerAgent:
         self.original_image_url = None
         self.results={}
     
-    def initialize_generation_chat(self):
+    async def initialize_generation_chat(self, ws_manager: WebsocketManager, session_id: str):
         if not self.original_image_url:
             self.original_image_url = get_cat_image(save_image=True)
             self.results["original_image_url"] = self.original_image_url
             self.results["runs"]=[]
+            await ws_manager.notify(session_id=session_id, message={
+            "type": "initial_notification",
+            "original_image_url": self.original_image_url
+        } )
             logger.info(f"Original cat image URL: {self.original_image_url}")
         self.generation_chat_history = [
             {
@@ -171,13 +175,8 @@ class CatCartoonizerAgent:
         Run the main loop for a specified number of iterations to generate cartoonized cat images.
         :param iterations: Number of iterations to run.
         """
-        self.initialize_generation_chat()
-        await ws_manager.notify(session_id=session_id, message={
-            "type": "initial_notification",
-            "original_image_url": self.original_image_url
-        } )
+        await self.initialize_generation_chat(ws_manager=ws_manager, session_id=session_id)
         generation_prompt = self.generate_prompt()
-    
         for i in range(iterations):
             iteration_num=i+1
             logger.info(f"Iteration {iteration_num} of {iterations}")

@@ -9,11 +9,12 @@ import type {
   WebSocketMessage,
   GenerationConfig,
   RunData,
-  //  GenerationThink,
+  ThinkState,
 } from "@/types/catGeneration";
-//import mockThought from "../../data/mockThought.json";
+// import mockThought from "../../data/mockThought.json";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OnboardingModal from "./OnboardingModal";
+import ThoughtBubble from "./ThoughtBubble";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { useWebSocket } from "@/hooks/useWebsocket";
@@ -256,6 +257,10 @@ export function CatGenerator() {
   const [generationState, setGenerationState] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
+  const [thinkState, setThinkState] = useState<ThinkState>({
+    currentThought: null,
+    showThought: true,
+  });
   const sessionId = useMemo(() => createOrRetrieveSessionId(), []);
   const { status, message } = useWebSocket(`${websocketUrl}${sessionId}`);
   const addRunData = (messageData: WebSocketMessage) => {
@@ -277,6 +282,18 @@ export function CatGenerator() {
         ...prevData,
         runs: [...prevData.runs, messageData as RunData],
       }));
+    } else if (messageData.type === "think_notification") {
+      console.log("Recieved a think");
+      setThinkState({
+        currentThought: messageData.thought,
+        showThought: true,
+      });
+      setTimeout(() => {
+        setThinkState({
+          currentThought: null,
+          showThought: false,
+        });
+      }, 4000);
     }
   };
   useEffect(() => {
@@ -298,6 +315,10 @@ export function CatGenerator() {
           sessionId
         );
       setStartGeneration(false); // Reset after fetching
+      setThinkState({
+        currentThought: null,
+        showThought: false,
+      });
       setGenerationState("success");
       return response as GenerationRunCompleteResponse;
     },
@@ -320,12 +341,13 @@ export function CatGenerator() {
       runs: [],
     });
 
-    if (import.meta.env.MODE === "development") {
-      setGenerationState("loading");
-      simulateMockData(mockGenerationRunData, setGenerationRunData, 2000);
-    } else {
-      setStartGeneration(true);
-    }
+    // if (import.meta.env.MODE === "development") {
+    //   setGenerationState("loading");
+    //   simulateMockData(mockGenerationRunData, setGenerationRunData, 2000);
+    // } else {
+    //   setStartGeneration(true);
+    // }
+    setStartGeneration(true);
   };
   const handleUpdateGenerationConfig = (
     updateKey: string,
@@ -349,6 +371,14 @@ export function CatGenerator() {
           onClose={handleCloseOnboarding}
         />
       )}
+      {thinkState.showThought &&
+        thinkState.currentThought &&
+        !showOnboardingModal && (
+          <ThoughtBubble
+            thought={thinkState.currentThought}
+            isOpen={thinkState.showThought}
+          />
+        )}
       <GenerationStatusCard
         state={generationState}
         handleGenerate={handleGenerate}

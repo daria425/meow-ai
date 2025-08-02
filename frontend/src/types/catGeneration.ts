@@ -29,9 +29,19 @@ type RunNotificationMessage = {
   evaluation: EvaluationData;
 };
 
+export type ThinkNotificationMessage = {
+  type: "think_notification";
+  iteration_num: number;
+  thought: string;
+};
+export type ThinkState = {
+  currentThought: string | null;
+  showThought: boolean;
+};
 export type WebSocketMessage =
   | InitialNotificationMessage
-  | RunNotificationMessage;
+  | RunNotificationMessage
+  | ThinkNotificationMessage;
 
 export type GenerationRun = {
   original_image_url: string;
@@ -43,11 +53,6 @@ export type GenerationConfig = {
   //add stuff later
 };
 
-export type GenerationThink = {
-  type: "think_notification";
-  iteration_num: number;
-  thought: string;
-};
 export type GenerationRunCompleteResponse = {
   status: string;
   message: string;
