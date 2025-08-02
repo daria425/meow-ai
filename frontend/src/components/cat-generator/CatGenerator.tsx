@@ -9,9 +9,9 @@ import type {
   WebSocketMessage,
   GenerationConfig,
   RunData,
-  GenerationThink,
+  //  GenerationThink,
 } from "@/types/catGeneration";
-import mockThought from "../../data/mockThought.json";
+//import mockThought from "../../data/mockThought.json";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OnboardingModal from "./OnboardingModal";
 import { Slider } from "@/components/ui/slider";
