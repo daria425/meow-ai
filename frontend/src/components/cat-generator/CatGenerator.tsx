@@ -1,7 +1,5 @@
 import catCartoonizerServiceInstance from "../../services/catCartonizerService";
 import meowAIPlaceholder from "../../assets/meow_ai_placeholder.svg";
-import lottieLoader from "../../assets/lottie_loader.lottie";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { useQuery } from "@tanstack/react-query";
 import type {
   GenerationRun,
@@ -14,7 +12,7 @@ import type {
 // import mockThought from "../../data/mockThought.json";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OnboardingModal from "./OnboardingModal";
-import ThoughtBubble from "./ThoughtBubble";
+import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { useWebSocket } from "@/hooks/useWebsocket";
@@ -198,7 +196,6 @@ function GenerationStatusCard({
           <div className="bg-blue-100 p-4 rounded-lg h-48 flex items-center justify-center">
             {state === "loading" && (
               <div className="flex flex-col justify-center items-center gap-2">
-                <DotLottieReact src={lottieLoader} loop autoplay />
                 <p className="text-pink-500">Generating...</p>
               </div>
             )}
@@ -257,12 +254,37 @@ export function CatGenerator() {
   const [generationState, setGenerationState] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
-  const [thinkState, setThinkState] = useState<ThinkState>({
-    currentThought: null,
-    showThought: true,
-  });
+  const [generationTimer, setGenerationTimer] = useState<NodeJS.Timeout | null>(
+    null
+  );
+  const [generationTime, setGenerationTime] = useState<number>(0);
   const sessionId = useMemo(() => createOrRetrieveSessionId(), []);
-  const { status, message } = useWebSocket(`${websocketUrl}${sessionId}`);
+  const { message } = useWebSocket(`${websocketUrl}${sessionId}`);
+  const startGenerationTimer = () => {
+    if (generationTimer) {
+      clearInterval(generationTimer);
+    }
+
+    setGenerationTime(0);
+
+    const timer = setInterval(() => {
+      setGenerationTime((prev) => {
+        const newTime = prev + 1;
+
+        // Show warning every 20 seconds
+        if (newTime > 0 && newTime % 20 === 0) {
+          toast.warning(
+            `Generation is taking longer than expected (${newTime}s). Please wait...`,
+            { duration: 5000 }
+          );
+        }
+
+        return newTime;
+      });
+    }, 1000);
+
+    setGenerationTimer(timer);
+  };
   const addRunData = (messageData: WebSocketMessage) => {
     console.log(messageData);
     if (
@@ -284,24 +306,29 @@ export function CatGenerator() {
       }));
     } else if (messageData.type === "think_notification") {
       console.log("Recieved a think");
-      setThinkState({
-        currentThought: messageData.thought,
-        showThought: true,
-      });
-      setTimeout(() => {
-        setThinkState({
-          currentThought: null,
-          showThought: false,
-        });
-      }, 4000);
+      toast.custom(
+        () => (
+          <div
+            className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-xs"
+            style={{
+              animation: "bounce 4s ease-in-out infinite",
+            }}
+          >
+            <div className="mb-2 text-center">
+              <p className="font-medium text-gray-900 text-sm">
+                ⋆⭒˚.⋆ AI had a thought! ⋆⭒˚.⋆
+              </p>
+            </div>
+            <p className="text-xs text-gray-800">"{messageData.thought}"</p>
+          </div>
+        ),
+        {
+          duration: 4000,
+        }
+      );
     }
   };
-  useEffect(() => {
-    if (message) {
-      addRunData(message);
-    }
-  }, [message]);
-  console.log(status, message);
+
   const handleCloseOnboarding = () => {
     setShowOnboardingModal(false);
   };
@@ -315,10 +342,6 @@ export function CatGenerator() {
           sessionId
         );
       setStartGeneration(false); // Reset after fetching
-      setThinkState({
-        currentThought: null,
-        showThought: false,
-      });
       setGenerationState("success");
       return response as GenerationRunCompleteResponse;
     },
@@ -326,15 +349,7 @@ export function CatGenerator() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
-  useEffect(() => {
-    if (isLoading) {
-      setGenerationState("loading");
-    } else if (error) {
-      setGenerationState("error");
-    }
-  }, [isLoading, error]);
   const handleGenerate = () => {
-    // Clear data first
     setGenerationState("idle");
     setGenerationRunData({
       original_image_url: "",
@@ -349,6 +364,19 @@ export function CatGenerator() {
     // }
     setStartGeneration(true);
   };
+  useEffect(() => {
+    if (isLoading) {
+      setGenerationState("loading");
+    } else if (error) {
+      setGenerationState("error");
+    }
+  }, [isLoading, error]);
+  useEffect(() => {
+    if (message) {
+      addRunData(message);
+    }
+  }, [message]);
+
   const handleUpdateGenerationConfig = (
     updateKey: string,
     updateValue: number | string,
@@ -371,14 +399,6 @@ export function CatGenerator() {
           onClose={handleCloseOnboarding}
         />
       )}
-      {thinkState.showThought &&
-        thinkState.currentThought &&
-        !showOnboardingModal && (
-          <ThoughtBubble
-            thought={thinkState.currentThought}
-            isOpen={thinkState.showThought}
-          />
-        )}
       <GenerationStatusCard
         state={generationState}
         handleGenerate={handleGenerate}

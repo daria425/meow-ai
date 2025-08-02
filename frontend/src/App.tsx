@@ -1,5 +1,5 @@
 import { CatGenerator } from "./components/cat-generator/CatGenerator";
-
+import { Toaster } from "@/components/ui/sonner";
 import Layout from "./components/shared/Layout";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 function App() {
@@ -11,6 +11,7 @@ function App() {
           <div className="max-w-6xl mx-auto p-8">
             <CatGenerator />
           </div>
+          <Toaster />
         </Layout>
       </div>
     </QueryClientProvider>
