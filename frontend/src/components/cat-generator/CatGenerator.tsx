@@ -9,7 +9,9 @@ import type {
   WebSocketMessage,
   GenerationConfig,
   RunData,
+  GenerationThink,
 } from "@/types/catGeneration";
+import mockThought from "../../data/mockThought.json";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OnboardingModal from "./OnboardingModal";
 import { Slider } from "@/components/ui/slider";
@@ -222,16 +224,19 @@ function GenerationStatusCard({
             <label htmlFor="iteration-count" className="text-gray-500">
               Iterations
             </label>
-            <Slider
-              value={[generationConfig.iterations]}
-              id="iteration-count"
-              max={10}
-              step={1}
-              className="w-full"
-              onValueChange={(value) =>
-                handleUpdateGenerationConfig("iterations", value[0], true)
-              }
-            />
+            <div className="flex gap-2">
+              <Slider
+                value={[generationConfig.iterations]}
+                id="iteration-count"
+                max={10}
+                step={1}
+                className="w-full"
+                onValueChange={(value) =>
+                  handleUpdateGenerationConfig("iterations", value[0], true)
+                }
+              />
+              <p>{generationConfig.iterations}</p>
+            </div>
           </div>
         </div>
       </CardContent>

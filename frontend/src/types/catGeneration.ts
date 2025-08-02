@@ -43,6 +43,11 @@ export type GenerationConfig = {
   //add stuff later
 };
 
+export type GenerationThink = {
+  type: "think_notification";
+  iteration_num: number;
+  thought: string;
+};
 export type GenerationRunCompleteResponse = {
   status: string;
   message: string;

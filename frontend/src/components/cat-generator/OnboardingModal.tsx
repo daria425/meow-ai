@@ -4,9 +4,11 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogClose,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import catPng from "../../assets/cat.png";
-
+import { Button } from "../ui/button";
 export default function OnboardingModal({
   isOpen,
   onClose,
@@ -19,17 +21,17 @@ export default function OnboardingModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <div className="h-[20px] w-[20px]">
+            <div className="h-[30px] w-[30px]">
               <img src={catPng} alt="Cat" />
             </div>
-            What is this?
+            <h2>What is this?</h2>
           </DialogTitle>
         </DialogHeader>
         <DialogDescription>
-          <p>
+          <h5>
             This app shows how AI can <i>self-reflect and improve</i> through a
             feedback loop.
-          </p>
+          </h5>
           <ol className="mt-2 space-y-1">
             <li>
               1. A random cat image is used to generate a cartoon-style prompt.
@@ -41,7 +43,22 @@ export default function OnboardingModal({
             </li>
             <li>4. The prompt is revised and the process repeats!</li>
           </ol>
+          <h5 className="mt-2">
+            You'll see each step of the process in real time:
+          </h5>
+          <ul className="mt-2 space-y-1">
+            <li>- The prompt used</li>
+            <li>- The generated image</li>
+            <li>- The AI's critique</li>
+          </ul>
         </DialogDescription>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button className="bg-gradient-to-r from-[#f5a327] to-[#c157c7] text-white text-xs">
+              Start Generating
+            </Button>
+          </DialogClose>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
