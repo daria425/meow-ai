@@ -7,10 +7,10 @@ import type {
   WebSocketMessage,
   GenerationConfig,
   RunData,
-  ThinkState,
 } from "@/types/catGeneration";
 // import mockThought from "../../data/mockThought.json";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LOADING_PHRASES } from "@/lib/constants";
 import OnboardingModal from "./OnboardingModal";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
@@ -74,19 +74,6 @@ function RunCard({ run }: { run: RunData }) {
             <MessageCircleMore className="h-4 w-4 text-emerald-500" />
             <h4 className="font-semibold">AI Critique</h4>
           </div>
-          {/* <ul>
-            <li>
-              Similarity to Original:{" "}
-              {run.evaluation.evaluation.similarity_to_original}
-            </li>
-            <li>
-              Cuteness Factor: {run.evaluation.evaluation.cuteness_factor}
-            </li>
-            <li>Artistic Style: {run.evaluation.evaluation.artistic_style}</li>
-            <li>
-              Overall Impression: {run.evaluation.evaluation.overall_impression}
-            </li>
-          </ul> */}
           <div className="bg-emerald-100 p-4 rounded-lg h-48 overflow-y-auto">
             <p className="leading-6">"{run.evaluation.critique}"</p>
           </div>
@@ -122,7 +109,7 @@ function StartGenerateButton({
         className="bg-gradient-to-r from-[#622a9b] to-[#c157c7] text-white text-xs"
         disabled={true}
       >
-        <Loader className="h-4 w-4" />
+        <Loader className="h-4 w-4 animate-spin" />
         Generating...
       </Button>
     );
@@ -154,6 +141,21 @@ function GenerationStatusCard({
     convertValueToNumber: boolean
   ) => void;
 }) {
+  const [currentGenerationPhrase, setGenerationPhrase] = useState<string>(
+    LOADING_PHRASES[0]
+  );
+  useEffect(() => {
+    if (state === "loading") {
+      let currentIdx = 0;
+      const interval = setInterval(() => {
+        currentIdx = (currentIdx + 1) % LOADING_PHRASES.length;
+        setGenerationPhrase(LOADING_PHRASES[currentIdx]);
+      }, 2000);
+      return () => clearInterval(interval);
+    } else {
+      setGenerationPhrase(LOADING_PHRASES[0]);
+    }
+  }, [state]);
   return (
     <Card>
       <CardHeader className="flex items-center gap-4">
@@ -196,7 +198,7 @@ function GenerationStatusCard({
           <div className="bg-blue-100 p-4 rounded-lg h-48 flex items-center justify-center">
             {state === "loading" && (
               <div className="flex flex-col justify-center items-center gap-2">
-                <p className="text-pink-500">Generating...</p>
+                <p className="text-pink-500">{currentGenerationPhrase}</p>
               </div>
             )}
             {state === "error" && (
@@ -204,7 +206,7 @@ function GenerationStatusCard({
             )}
             {state === "success" && (
               <p className="text-green-600">
-                Cat cartoon generated successfully!
+                Cartoon cat generation completed!
               </p>
             )}
             {state === "idle" && (
@@ -257,7 +259,6 @@ export function CatGenerator() {
   const [generationTimer, setGenerationTimer] = useState<NodeJS.Timeout | null>(
     null
   );
-  const [generationTime, setGenerationTime] = useState<number>(0);
   const sessionId = useMemo(() => createOrRetrieveSessionId(), []);
   const { message } = useWebSocket(`${websocketUrl}${sessionId}`);
   const startGenerationTimer = () => {
@@ -265,25 +266,26 @@ export function CatGenerator() {
       clearInterval(generationTimer);
     }
 
-    setGenerationTime(0);
+    let generationTime = 0;
 
     const timer = setInterval(() => {
-      setGenerationTime((prev) => {
-        const newTime = prev + 1;
+      generationTime += 1;
 
-        // Show warning every 20 seconds
-        if (newTime > 0 && newTime % 20 === 0) {
-          toast.warning(
-            `Generation is taking longer than expected (${newTime}s). Please wait...`,
-            { duration: 5000 }
-          );
-        }
-
-        return newTime;
-      });
+      // Show warning every 10 seconds
+      if (generationTime > 0 && generationTime % 10 === 0) {
+        toast.warning(
+          `Generation is taking longer than expected (${generationTime}s). Please wait...`,
+          { duration: 5000 }
+        );
+      }
     }, 1000);
-
     setGenerationTimer(timer);
+  };
+  const stopGenerationTimer = () => {
+    if (generationTimer) {
+      clearInterval(generationTimer);
+      setGenerationTimer(null);
+    }
   };
   const addRunData = (messageData: WebSocketMessage) => {
     console.log(messageData);
@@ -323,7 +325,7 @@ export function CatGenerator() {
           </div>
         ),
         {
-          duration: 4000,
+          duration: 5000,
         }
       );
     }
@@ -342,6 +344,7 @@ export function CatGenerator() {
           sessionId
         );
       setStartGeneration(false); // Reset after fetching
+      stopGenerationTimer();
       setGenerationState("success");
       return response as GenerationRunCompleteResponse;
     },
@@ -366,9 +369,11 @@ export function CatGenerator() {
   };
   useEffect(() => {
     if (isLoading) {
+      startGenerationTimer();
       setGenerationState("loading");
     } else if (error) {
       setGenerationState("error");
+      stopGenerationTimer();
     }
   }, [isLoading, error]);
   useEffect(() => {
