@@ -1,7 +1,7 @@
 from app.utils.get_image import get_cat_image, get_cartoonized_cat
 from app.utils.file_utils import load_txt_instuctions, get_image_data_url
 from app.utils.response_handlers import process_llm_json
-from app.utils.decorators import retry_on_failure
+from app.utils.decorators import retry_on_failure, timeout_handler
 from app.config.settings import app_settings
 from app.services.websocket_manager import WebsocketManager
 from openai import OpenAI
@@ -168,7 +168,8 @@ class CatCartoonizerAgent:
                 )
                 revised_prompt_response = revised_prompt_response.output_text
                 return revised_prompt_response
-
+    
+    @timeout_handler(300)
     async def run_generation_loop_live(self, ws_manager: WebsocketManager, session_id: str, iterations: int = 3 ):
         """
         Run the main loop for a specified number of iterations to generate cartoonized cat images.

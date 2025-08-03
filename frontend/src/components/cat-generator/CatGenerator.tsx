@@ -270,11 +270,9 @@ export function CatGenerator() {
 
     const timer = setInterval(() => {
       generationTime += 1;
-
-      // Show warning every 10 seconds
-      if (generationTime > 0 && generationTime % 10 === 0) {
+      if (generationTime > 0 && generationTime % 30 === 0) {
         toast.warning(
-          `Generation is taking longer than expected (${generationTime}s). Please wait...`,
+          `Generation in progress (${generationTime}s). The AI is working hard! ⏳`,
           { duration: 5000 }
         );
       }
@@ -337,17 +335,48 @@ export function CatGenerator() {
   const { error, isLoading } = useQuery({
     queryKey: ["cartoonizedCat"],
     queryFn: async () => {
-      console.log("Fetching cartoonized cat...");
-      const response =
-        await catCartoonizerServiceInstance.getLiveCartoonizedCatGeneration(
-          generationConfig,
-          sessionId
-        );
-      setStartGeneration(false); // Reset after fetching
-      stopGenerationTimer();
-      setGenerationState("success");
-      return response as GenerationRunCompleteResponse;
+      try {
+        const response =
+          await catCartoonizerServiceInstance.getLiveCartoonizedCatGeneration(
+            generationConfig,
+            sessionId
+          );
+
+        setStartGeneration(false);
+        stopGenerationTimer();
+        setGenerationState("success");
+
+        return response as GenerationRunCompleteResponse;
+      } catch (err: any) {
+        setStartGeneration(false);
+        stopGenerationTimer();
+        setGenerationState("error");
+
+        // Handle specific error types
+        if (err.message.includes("timeout")) {
+          toast.error("Generation timed out. Please try again.", {
+            duration: 5000,
+          });
+        } else if (err.message.includes("network")) {
+          toast.error("Network error. Check your connection.", {
+            duration: 5000,
+          });
+        } else {
+          toast.error("An error occurred during generation.", {
+            duration: 5000,
+          });
+        }
+
+        throw err;
+      }
     },
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    staleTime: 0, // Consider data stale immediately
+    gcTime: 5 * 60 * 1000, // 5 minutes (was cacheTime in older versions)
+
+    // Error handling
+    throwOnError: false,
     enabled: startGeneration, // Only run query when startGeneration is true
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,

@@ -1,8 +1,14 @@
 
 import time
+import asyncio
 from functools import wraps
+from typing import Callable, TypeVar, ParamSpec
+
 from app.utils.logger import logger
 from app.utils.error_handlers import categorize_error
+
+P=ParamSpec("P")
+T=TypeVar("T")
 def retry_on_failure(max_retries:int=3, delay:float=1.0, backoff_exp:float=2.0):
     def decorator(func):
         @wraps(func)
@@ -45,4 +51,26 @@ def retry_on_failure(max_retries:int=3, delay:float=1.0, backoff_exp:float=2.0):
                 }
                 
         return retry_wrapper
+    return decorator
+
+
+def timeout_handler(timeout: int):
+    def decorator(func: Callable[P,T])->Callable[P,T]:
+        @wraps
+        async def wrapper(*args:P.args, **kwargs: P.kwargs):
+            try:
+                return await asyncio.wait_for(
+                    func(*args, **kwargs), 
+                    timeout=timeout
+                )
+            except asyncio.TimeoutError:
+                error_message=f"A timeout error ocurred. Function {func.__name__} timed out after {timeout} seconds"
+                logger.error(error_message)
+                error_category=categorize_error(error_message)
+                return {
+                    "status": "error", 
+                    "category":error_category,
+                    "message": error_message
+                }
+        return wrapper
     return decorator
