@@ -341,7 +341,7 @@ export function CatGenerator() {
             generationConfig,
             sessionId
           );
-
+        console.log("Response recieved, stopping timer");
         setStartGeneration(false);
         stopGenerationTimer();
         setGenerationState("success");
@@ -382,7 +382,7 @@ export function CatGenerator() {
     refetchOnReconnect: false,
   });
   const handleGenerate = () => {
-    setGenerationState("idle");
+    setGenerationState("loading");
     setGenerationRunData({
       original_image_url: "",
       runs: [],

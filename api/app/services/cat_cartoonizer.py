@@ -123,13 +123,10 @@ class CatCartoonizerAgent:
                      "content": f"""
             My feedback on the image generated from your description: 
             {evaluation_response["critique"]}
+        
             
-            Please think through:
-            1. What specific issues were identified in the feedback?
-            2. What aspects of the original prompt might have caused these issues?
-            3. What changes should be made to address each concern?
-            
-            Please analyze the feedback step by step and concisely answer each question.
+            Please analyze the feedback step by step and respond concisely.
+            Ensure your response is maximum 1-2 sentences.
             DO NOT USE MARKDOWN
             EXAMPLES:
             "I need to emphasize sharper whiskers and brighter eyes. I added too much background detail that distracts from the cat."
