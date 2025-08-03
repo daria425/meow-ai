@@ -56,7 +56,7 @@ def retry_on_failure(max_retries:int=3, delay:float=1.0, backoff_exp:float=2.0):
 
 def timeout_handler(timeout: int):
     def decorator(func: Callable[P,T])->Callable[P,T]:
-        @wraps
+        @wraps(func)
         async def wrapper(*args:P.args, **kwargs: P.kwargs):
             try:
                 return await asyncio.wait_for(
