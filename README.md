@@ -12,7 +12,7 @@ Each iteration is logged and displayed, showing:
 
 - the LLM’s feedback
 
-This project is an implementation of reflective generation, a fundamental pattern used in generative AI applications, inspired by this [Agentic Patterns Repository]("https://github.com/neural-maze/agentic-patterns-course) by [Neural Maze]("https://github.com/neural-maze").
+This project is an implementation of reflective generation, a fundamental pattern used in generative AI applications, inspired by this [Agentic Patterns Repository](https://github.com/neural-maze/agentic-patterns-course) by [Neural Maze](https://github.com/neural-maze).
 
 ## Tech Stack
 
